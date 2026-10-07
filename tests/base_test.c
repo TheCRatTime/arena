@@ -24,12 +24,13 @@ static void Corruption(void) {
 
   ArenaReset(test);
 
-  /* Writed to 'buffer' more than 8 bytes. */
+  /* Overwrote to 'buffer' more than 8 bytes. */
   assert(test->corruptions == 1);
 
-  /* sizeof(int) -> 8
-     5 -> 8
-     8 + 8 = 16 - allocated */
+  /* Alignment pads allocation to 8 bytes:
+     sizeof(int)     -> 8
+     TEST_BUFSIZ (5) -> 8
+     8 + 8 = 16 (Total peak usage) */
   assert(test->peak_usage == 16);
 
   FreeArena(test);
