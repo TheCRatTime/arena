@@ -1,0 +1,53 @@
+.\" Copyright (C) 2026 TheCRatTime
+.\"
+.\" Licensed under the Apache License, Version 2.0 (the "License");
+.\" you may not use this file except in compliance with the License.
+.\" You may obtain a copy of the License at
+.\"
+.\"     http://www.apache.org/licenses/LICENSE-2.0
+.\"
+.\" Unless required by applicable law or agreed to in writing, software
+.\" distributed under the License is distributed on an "AS IS" BASIS,
+.\" WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.\" See the License for the specific language governing permissions and
+.\" limitations under the License.
+.TH "Arena" "3type" "2026\-10\-07" "arena" "Arena Manuals"
+.SH NAME
+\fBArena\fR \- arena struct.\&
+.PP
+.SH SYNOPSIS
+.nf
+\fB#include "arena.\&h"\fR
+.fi
+.PP
+.nf
+\fBtypedef struct Arena {
+  char* \fIdata\fB;
+  size_t \fIcapacity\fB;
+  size_t \fIoffset\fB;
+} Arena;\fR
+.fi
+.PP
+.SH DESCRIPTION
+This is an arena struct.\&
+.PP
+\fIdata\fR
+.RS 4
+Pointer to arena data.\&
+.RE
+.PP
+\fIcapacity\fR
+.RS 4
+Size of arena.\&
+.RE
+.PP
+\fIoffset\fR
+.RS 4
+Offset of data.\&
+.RE
+.PP
+.SH AUTHORS
+Project and man\-page: TheCRatTime.\&
+.PP
+.SH SEE ALSO
+\fBarena\fR(3), \fBInitArena\fR(3), \fBArenaAlloc\fR(3), \fBFreeArena\fR(3), \fBArenaReset\fR(3) 

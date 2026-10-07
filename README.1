@@ -1,0 +1,73 @@
+.TH README 1 2026\-10\-07 TheCRatTime arena
+.SH arena
+\fBarena\fR \- allocate memory and free memory once.\&
+.P)
+.SH Description
+This is \fBSingle\-header\fR library with fast memory arena.\&
+You need allocate memory and free it once.\&
+.PP
+.SS Features
+\fB\-\fR ANSI C/C89 code standard.\&
+.br
+\fB\-\fR Single\-header library.\&
+.br
+\fB\-\fR Fast allocation (\fBO(1)\fR).\&
+.PP
+.SS Quick start
+.nf
+.RS 4
+#define ARENA_SOURCE
+#include "arena.\&h"
+
+int main(void) {
+  Arena* example = InitArena(4096);
+  int* data = (int*)ArenaAlloc(example, sizeof(int));
+  char* buffer = (char*)ArenaAlloc(example, 1024);
+
+  if (example == NULL) {
+    return 1;
+  }
+
+  if (data == NULL || buffer == NULL) {
+    /* Only free arena.\& */
+    FreeArena(example);
+    return 1;
+  }
+
+  /* .\&.\&.\& */
+
+  /* Just free arena, no need free buffer or data */
+  FreeArena(example);
+  return 0;
+}
+.fi
+.RE
+.PP
+.SS Building
+.nf
+.RS 4
+cmake \-B build
+cd build/
+make
+.fi
+.RE
+.PP
+.SS Authors
+TheCRatTime.\&
+.PP
+.SS Examples
+You can see examples in \fBexamples/\fR directory.\&
+.PP
+.SS License
+Project is under Apache 2.0 license.\&
+.PP
+.SS Also
+See this README.\&md in manual \-> \fBREADME.\&1\fR with
+this command:
+.PP
+.nf
+.RS 4
+man \-l README.1
+.fi
+.RE
+.PP

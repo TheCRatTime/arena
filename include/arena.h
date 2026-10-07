@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* === BEGIN HEADER === */
+
 #ifndef ARENA_ARENA_H_
 #define ARENA_ARENA_H_
 
@@ -21,9 +23,9 @@
 
 /* struct Arena */
 typedef struct Arena {
-  char* data;
-  size_t capacity;
-  size_t offset;
+  char* data;      /* Arena data          */
+  size_t capacity; /* Total size of arena */
+  size_t offset;   /* Offset of arena     */
 } Arena;
 
 /* Initial function for arena */
@@ -39,3 +41,82 @@ void ArenaReset(Arena*);
 void FreeArena(Arena*);
 
 #endif /* ARENA_ARENA_H_ */
+/************************/
+
+/* === BEGIN SOURCE === */
+
+#ifdef ARENA_SOURCE
+
+#include <stdlib.h>
+
+static int BadArena(Arena* arena) {
+  if (arena == NULL) {
+    return 1;
+  }
+
+  if (arena->capacity == 0            ||
+      arena->data == NULL             ||
+      arena->offset > arena->capacity) {
+    return 1;
+  }
+  return 0;
+}
+
+Arena* InitArena(size_t init_cap) {
+  char* slice = NULL;
+  Arena* arena = NULL;
+
+  if (init_cap == 0) {
+    return NULL;
+  }
+
+  slice = (char*)malloc(sizeof(Arena) + init_cap);
+  if (slice == NULL) {
+    return NULL;
+  }
+
+  arena = (Arena*)(void*)slice;
+  
+  arena->data     = slice + sizeof(Arena);
+  arena->capacity =              init_cap;
+  arena->offset   =                     0;
+
+  return arena;
+}
+
+void* ArenaAlloc(Arena* arena, size_t bytes) {
+  char* ret = NULL;
+  size_t total_size = 0;
+  if (BadArena(arena) || bytes == 0) {
+    return NULL;
+  }
+
+  /* 8-byte alignment */
+  total_size = ((bytes + 7) & (size_t)~7);
+  if (arena->offset+total_size > arena->capacity) {
+    return NULL;
+  }
+
+  ret = &arena->data[arena->offset];
+  arena->offset += total_size;
+  
+  return ret;
+}
+
+void ArenaReset(Arena* to_reset) {
+  if (BadArena(to_reset)) {
+    return;
+  }
+
+  /* Just reset offset */
+  to_reset->offset = 0;
+}
+
+void FreeArena(Arena* ptr) {
+  if (ptr) {
+    free(ptr);
+  }
+}
+
+#endif /* ARENA_SOURCE */
+/************************/
