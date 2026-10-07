@@ -11,7 +11,9 @@ You need allocate memory and free it once.\&
 .br
 \fB\-\fR Single\-header library.\&
 .br
-\fB\-\fR Fast allocation (\fBO(1)\fR).\&
+\fB\-\fR Out\-Of\-Bounds detection.\&
+.br
+\fB\-\fR Quick start.\&
 .PP
 .SS Quick start
 .nf
@@ -33,6 +35,9 @@ int main(void) {
     FreeArena(example);
     return 1;
   }
+
+  /* Peak usage: */
+  printf("Peak usage: %lu\en", example->peak_usage);
 
   /* .\&.\&.\& */
 

@@ -8,7 +8,8 @@ You need allocate memory and free it once.
 ## Features
 - ANSI C/C89 code standard.
 - Single-header library.
-- Fast allocation (**O(1)**).
+- Out-Of-Bounds detection.
+- Quick start.
 
 ## Quick start
 ```c
@@ -29,6 +30,9 @@ int main(void) {
     FreeArena(example);
     return 1;
   }
+
+  /* Peak usage: */
+  printf("Peak usage: %lu\n", example->peak_usage);
 
   /* ... */
 
