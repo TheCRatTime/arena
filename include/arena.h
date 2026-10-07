@@ -23,9 +23,12 @@
 
 /* struct Arena */
 typedef struct Arena {
-  char* data;      /* Arena data          */
-  size_t capacity; /* Total size of arena */
-  size_t offset;   /* Offset of arena     */
+  char* data;        /* Arena data          */
+  size_t peak_usage; /* Peak usage          */
+  int corruptions;   /* Corruptions         */
+  char padding[4];   /* For C89 padding     */
+  size_t capacity;   /* Total size of arena */
+  size_t offset;     /* Offset of arena     */
 } Arena;
 
 /* Initial function for arena */
@@ -56,15 +59,18 @@ static int BadArena(Arena* arena) {
 
   if (arena->capacity == 0            ||
       arena->data == NULL             ||
+      arena->corruptions < 0          ||
       arena->offset > arena->capacity) {
     return 1;
   }
+
   return 0;
 }
 
 Arena* InitArena(size_t init_cap) {
   char* slice = NULL;
   Arena* arena = NULL;
+  size_t cur_byte = 0;
 
   if (init_cap == 0) {
     return NULL;
@@ -77,9 +83,16 @@ Arena* InitArena(size_t init_cap) {
 
   arena = (Arena*)(void*)slice;
   
-  arena->data     = slice + sizeof(Arena);
-  arena->capacity =              init_cap;
-  arena->offset   =                     0;
+  arena->data = slice + sizeof(Arena);
+
+  for(cur_byte = 0; cur_byte < init_cap; cur_byte++) {
+    arena->data[cur_byte] = 0;
+  }
+  
+  arena->capacity     = init_cap;
+  arena->peak_usage  = 0;
+  arena->corruptions = 0;
+  arena->offset      = 0;
 
   return arena;
 }
@@ -87,7 +100,9 @@ Arena* InitArena(size_t init_cap) {
 void* ArenaAlloc(Arena* arena, size_t bytes) {
   char* ret = NULL;
   size_t total_size = 0;
-  if (BadArena(arena) || bytes == 0) {
+  size_t cur_byte = 0;
+  
+  if (BadArena(arena) || bytes == 0 || arena->offset == arena->capacity) {
     return NULL;
   }
 
@@ -97,18 +112,44 @@ void* ArenaAlloc(Arena* arena, size_t bytes) {
     return NULL;
   }
 
+  /* Corruption check */
+  for(cur_byte = arena->offset; cur_byte < arena->capacity; cur_byte++) {
+    if (arena->data[cur_byte] != 0) {
+      arena->corruptions++;
+      break;
+    }
+  }
+
   ret = &arena->data[arena->offset];
   arena->offset += total_size;
+
+  if (arena->offset > arena->peak_usage) {
+    arena->peak_usage = arena->offset;
+  }
   
   return ret;
 }
 
 void ArenaReset(Arena* to_reset) {
+  size_t cur_byte = 0;
+  
   if (BadArena(to_reset)) {
     return;
   }
 
-  /* Just reset offset */
+  if (to_reset->offset < to_reset->capacity) {
+    for(cur_byte = to_reset->offset; cur_byte < to_reset->capacity; cur_byte++) {
+      if (to_reset->data[cur_byte] != 0) {
+        to_reset->corruptions++;
+        break;
+      }
+    }
+  }
+
+  for(cur_byte = 0; cur_byte < to_reset->capacity; cur_byte++) {
+    to_reset->data[cur_byte] = 0;
+  }
+
   to_reset->offset = 0;
 }
 
