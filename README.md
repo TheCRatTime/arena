@@ -10,10 +10,13 @@ You need allocate memory and free it once.
 - Single-header library.
 - Out-Of-Bounds detection.
 - Quick start.
+- Compiles with `-Weverything -pedantic -Werror -Wno-unsafe-buffer-usage` flags.
 
 ## Quick start
 ```c
 #define ARENA_SOURCE
+/* Using debug arena */
+#define ARENA_DEBUG
 #include "arena.h"
 
 int main(void) {

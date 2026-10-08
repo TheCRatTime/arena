@@ -1,4 +1,6 @@
 #define ARENA_SOURCE
+/* Without debug information */
+#define FAST_ARENA
 #include "../include/arena.h"
 
 #include <stdio.h>

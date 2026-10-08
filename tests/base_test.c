@@ -1,5 +1,7 @@
 #include <string.h>
+
 #define ARENA_SOURCE
+#define ARENA_DEBUG
 #include "../include/arena.h"
 
 #include <assert.h>

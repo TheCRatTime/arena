@@ -14,21 +14,37 @@
  * limitations under the License.
  */
 
+/* -Weverything flag */
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic fatal "-Weverything"
+#pragma clang diagnostic fatal "-Wpedantic"
+#pragma clang diagnostic fatal "-Wall"
+#pragma clang diagnostic fatal "-Wextra"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#endif
+
 /* === BEGIN HEADER === */
 
 #ifndef ARENA_ARENA_H_
 #define ARENA_ARENA_H_
+
+/* Debug arena mode: */
+#if !defined(ARENA_DEBUG) && !defined(FAST_ARENA)
+# error "Define ARENA_DEBUG or FAST_ARENA"
+#endif
 
 #include <stddef.h>
 
 /* struct Arena */
 typedef struct Arena {
   char* data;        /* Arena data          */
-  size_t peak_usage; /* Peak usage          */
-  int corruptions;   /* Corruptions         */
-  char padding[4];   /* For C89 padding     */
   size_t capacity;   /* Total size of arena */
   size_t offset;     /* Offset of arena     */
+#ifdef ARENA_DEBUG
+  size_t peak_usage; /* Peak usage          */
+  size_t corruptions;   /* Corruptions         */
+#endif
 } Arena;
 
 /* Initial function for arena */
@@ -50,6 +66,11 @@ void FreeArena(Arena*);
 
 #ifdef ARENA_SOURCE
 
+/* Debug arena mode: */
+#if !defined(ARENA_DEBUG) && !defined(FAST_ARENA)
+# error "Define ARENA_DEBUG or FAST_ARENA"
+#endif
+
 #include <stdlib.h>
 
 static int BadArena(Arena* arena) {
@@ -59,7 +80,6 @@ static int BadArena(Arena* arena) {
 
   if (arena->capacity == 0            ||
       arena->data == NULL             ||
-      arena->corruptions < 0          ||
       arena->offset > arena->capacity) {
     return 1;
   }
@@ -70,7 +90,9 @@ static int BadArena(Arena* arena) {
 Arena* InitArena(size_t init_cap) {
   char* slice = NULL;
   Arena* arena = NULL;
+#ifdef ARENA_DEBUG
   size_t cur_byte = 0;
+#endif
 
   if (init_cap == 0) {
     return NULL;
@@ -85,13 +107,17 @@ Arena* InitArena(size_t init_cap) {
   
   arena->data = slice + sizeof(Arena);
 
+#ifdef ARENA_DEBUG
   for(cur_byte = 0; cur_byte < init_cap; cur_byte++) {
     arena->data[cur_byte] = 0;
   }
+#endif
   
   arena->capacity     = init_cap;
+#ifdef ARENA_DEBUG
   arena->peak_usage  = 0;
   arena->corruptions = 0;
+#endif
   arena->offset      = 0;
 
   return arena;
@@ -100,7 +126,9 @@ Arena* InitArena(size_t init_cap) {
 void* ArenaAlloc(Arena* arena, size_t bytes) {
   char* ret = NULL;
   size_t total_size = 0;
+#ifdef ARENA_DEBUG
   size_t cur_byte = 0;
+#endif
   
   if (BadArena(arena) || bytes == 0 || arena->offset == arena->capacity) {
     return NULL;
@@ -112,6 +140,7 @@ void* ArenaAlloc(Arena* arena, size_t bytes) {
     return NULL;
   }
 
+#ifdef ARENA_DEBUG
   /* Corruption check */
   for(cur_byte = arena->offset; cur_byte < arena->capacity; cur_byte++) {
     if (arena->data[cur_byte] != 0) {
@@ -119,24 +148,30 @@ void* ArenaAlloc(Arena* arena, size_t bytes) {
       break;
     }
   }
+#endif
 
   ret = &arena->data[arena->offset];
   arena->offset += total_size;
 
+#ifdef ARENA_DEBUG
   if (arena->offset > arena->peak_usage) {
     arena->peak_usage = arena->offset;
   }
+#endif
   
   return ret;
 }
 
 void ArenaReset(Arena* to_reset) {
+#ifdef ARENA_DEBUG
   size_t cur_byte = 0;
+#endif
   
   if (BadArena(to_reset)) {
     return;
   }
 
+#ifdef ARENA_DEBUG
   if (to_reset->offset < to_reset->capacity) {
     for(cur_byte = to_reset->offset; cur_byte < to_reset->capacity; cur_byte++) {
       if (to_reset->data[cur_byte] != 0) {
@@ -149,6 +184,7 @@ void ArenaReset(Arena* to_reset) {
   for(cur_byte = 0; cur_byte < to_reset->capacity; cur_byte++) {
     to_reset->data[cur_byte] = 0;
   }
+#endif
 
   to_reset->offset = 0;
 }
@@ -161,3 +197,8 @@ void FreeArena(Arena* ptr) {
 
 #endif /* ARENA_SOURCE */
 /************************/
+
+/* -Weverything flag */
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
