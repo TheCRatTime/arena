@@ -1,0 +1,73 @@
+.\" Copyright (C) 2026 TheCRatTime
+.\"
+.\" Licensed under the Apache License, Version 2.0 (the "License");
+.\" you may not use this file except in compliance with the License.
+.\" You may obtain a copy of the License at
+.\"
+.\"     http://www.apache.org/licenses/LICENSE-2.0
+.\"
+.\" Unless required by applicable law or agreed to in writing, software
+.\" distributed under the License is distributed on an "AS IS" BASIS,
+.\" WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.\" See the License for the specific language governing permissions and
+.\" limitations under the License.
+.TH "GEN_BIND" "3const" "2026\-10\-09" "arena" "Arena Manuals"
+.SH NAME
+\fBGEN_BIND\fR \- get \fBC++\fR style in \fBC\fR.\&
+.PP
+.SH DESCRIPTION
+There is special macro for better code.\& Example:
+.PP
+.nf
+.RS 4
+/* You writing: */
+ArenaAlloc(arena, sizeof(int));
+/* With macro, you can write: */
+arena->Alloc(sizeof(int));
+/* Memory will be allocated in arena.\& */
+.fi
+.RE
+.PP
+\fBBUT\fR you may bind arena only once.\& To setup and bind:
+.PP
+.nf
+.RS 4
+/* Specify that we needs BIND function.\& */
+#define \fBNEEDED_BIND\fR
+#include "arena.h"
+
+/* Generate BIND with ID '\&test\&' */
+\fBGEN_BIND(\fItest\fB);\fR
+
+/* Example: */
+int main(void) {
+  int* some_data = NULL;
+  Arena* arena = InitArena(\fI4096\fR);
+  /* Check for NULL.\&.\&.\& */
+
+  /* BINDing to ID '\&test'\& arena \fIarena\fR.\& */
+  \fBBindID\fItest\fB(arena);\fR
+
+  /* Now, you can write so: */
+  some_data = arena.\&Alloc(sizeof(int));
+  /* Isn't ArenaAlloc(arena, sizeof(int)).\& */
+
+  /* other code.\&.\&.\& */
+
+  /* free arena and exit: */
+  return 0;
+}
+.fi
+.RE
+.PP
+You can rebind arena, but you can'\&t write \fIarena\fB.\&Alloc()\fR for it,
+otherwise will be bug.\&
+.PP
+.SH RETURN VALUE
+Return value is \fB0\fR or \fB1\fR if has error.\&
+.PP
+.SH AUTHORS
+Project and man\-page: TheCRatTime
+.PP
+.SH SEE ALSO
+\fBarena\fR(3), \fBInitArena\fR(3), \fBArenaAlloc\fR(3), \fBArenaFree\fR(3)

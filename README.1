@@ -13,35 +13,55 @@ You need allocate memory and free it once.\&
 .br
 \fB\-\fR Out\-Of\-Bounds detection.\&
 .br
-\fB\-\fR Quick start.\&
+\fB\-\fR Compiles with \fB\-Weverything \-pedantic \-Werror \-Wno\-unsafe\-buffer\-usage \-Wno\-old\-style\-cast\fR flags.
 .PP
 .SS Quick start
 .nf
 .RS 4
 #define ARENA_SOURCE
-#include "arena.\&h"
+/* Without debug information */
+#define FAST_ARENA
+
+/* Using BIND */
+#define NEEDED_BIND
+#include ".\&.\&/include/arena.\&h"
+
+#include <stdio.\&h>
+
+/* Generate BIND with ID '\&ex'\& */
+GEN_BIND(ex);
 
 int main(void) {
   Arena* example = InitArena(4096);
-  int* data = (int*)ArenaAlloc(example, sizeof(int));
-  char* buffer = (char*)ArenaAlloc(example, 1024);
-
+  int* data1 = NULL;
+  int* data2 = NULL;
+  
   if (example == NULL) {
+    printf("Out of memory\en");
     return 1;
   }
 
-  if (data == NULL || buffer == NULL) {
-    /* Only free arena.\& */
+  /* Using BIND */
+  BindIDex(example);
+
+  /* This is C++ style.\& */
+  /* Can allocate so: */
+  data1 = example->Alloc(sizeof(int));
+  data2 = example->Alloc(sizeof(int));
+
+  if (data1 == NULL || data2 == NULL) {
+    /* Need only free arena.\& */
     FreeArena(example);
+    printf("Arena allocate failed\en");
     return 1;
   }
 
-  /* Peak usage: */
-  printf("Peak usage: %lu\en", example->peak_usage);
+  *data1 = 5;
+  *data2 = 50;
+  
+  printf("%d + %d = %d\en", *data1, *data2, (*data1 + *data2));
 
-  /* .\&.\&.\& */
-
-  /* Just free arena, no need free buffer or data */
+  /* You only free arena */
   FreeArena(example);
   return 0;
 }

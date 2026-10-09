@@ -1,20 +1,33 @@
 #define ARENA_SOURCE
 /* Without debug information */
 #define FAST_ARENA
+
+/* Using BIND */
+#define NEEDED_BIND
 #include "../include/arena.h"
 
 #include <stdio.h>
 
+/* Generate BIND with ID 'ex' */
+GEN_BIND(ex);
+
 int main(void) {
   Arena* example = InitArena(4096);
-  /* Don't falls ArenaAlloc because function's checking arena. */
-  int* data1 = (int*)ArenaAlloc(example, sizeof(int));
-  int* data2 = (int*)ArenaAlloc(example, sizeof(int));
+  int* data1 = NULL;
+  int* data2 = NULL;
   
   if (example == NULL) {
     printf("Out of memory\n");
     return 1;
   }
+
+  /* Using BIND */
+  BindIDex(example);
+
+  /* This is C++ style. */
+  /* Can allocate so: */
+  data1 = example->Alloc(sizeof(int));
+  data2 = example->Alloc(sizeof(int));
 
   if (data1 == NULL || data2 == NULL) {
     /* Need only free arena. */

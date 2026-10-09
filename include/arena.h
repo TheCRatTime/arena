@@ -21,7 +21,11 @@
 #pragma clang diagnostic fatal "-Wpedantic"
 #pragma clang diagnostic fatal "-Wall"
 #pragma clang diagnostic fatal "-Wextra"
+
+/* Error on 'buffer[i]' */
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+/* Error on "int var = (int)'6'" */
+#pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
 /* === BEGIN HEADER === */
@@ -36,15 +40,20 @@
 
 #include <stddef.h>
 
+typedef void* (*AllocFunc)(size_t);
+typedef void (*ResetFunc)(void);
+
 /* struct Arena */
 typedef struct Arena {
   char* data;        /* Arena data          */
   size_t capacity;   /* Total size of arena */
   size_t offset;     /* Offset of arena     */
 #ifdef ARENA_DEBUG
-  size_t peak_usage; /* Peak usage          */
-  size_t corruptions;   /* Corruptions         */
+  size_t peak_usage;  /* Peak usage        */
+  size_t corruptions; /* Corruptions       */
 #endif
+  AllocFunc Alloc;    /* Internal allocator */
+  ResetFunc Reset;    /* Internal reset     */
 } Arena;
 
 /* Initial function for arena */
@@ -87,7 +96,8 @@ static int BadArena(Arena* arena) {
   return 0;
 }
 
-Arena* InitArena(size_t init_cap) {
+Arena* InitArena(size_t arena_size) {
+  size_t init_cap = (size_t)((arena_size + 7) & (size_t)~7);
   char* slice = NULL;
   Arena* arena = NULL;
 #ifdef ARENA_DEBUG
@@ -197,6 +207,43 @@ void FreeArena(Arena* ptr) {
 
 #endif /* ARENA_SOURCE */
 /************************/
+
+/* === BEGIN BIND GENERATION === */
+#ifdef NEEDED_BIND
+#undef NEEDED_BIND
+
+#define GEN_BIND(id) \
+static Arena* InternalGetterID##id(int mode, Arena* ptr) { \
+  static Arena* storage = NULL; \
+  if (mode) { \
+    return storage; \
+  } \
+  \
+  storage = ptr; \
+  return storage; \
+} \
+\
+static void* InternalAllocID##id(size_t bytes) { \
+  return ArenaAlloc(InternalGetterID##id(1, NULL), bytes); \
+} \
+\
+static void InternalResetID##id(void) { \
+  ArenaReset(InternalGetterID##id(1, NULL)); \
+} \
+\
+static int BindID##id(Arena* arena) { \
+  if (BadArena(arena)) { \
+    return 1; \
+  } \
+  InternalGetterID##id(0, arena); \
+  arena->Alloc = InternalAllocID##id; \
+  arena->Reset = InternalResetID##id; \
+  \
+  return 0; \
+}
+
+#endif /* NEEDED_BIND */
+/*********************************/
 
 /* -Weverything flag */
 #if defined(__clang__)
