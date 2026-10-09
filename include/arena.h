@@ -96,10 +96,11 @@ static int BadArena(Arena* arena) {
   return 0;
 }
 
-Arena* InitArena(size_t arena_size) {
-  size_t init_cap = (size_t)((arena_size + 7) & (size_t)~7);
+Arena* InitArena(size_t init_cap) {
   char* slice = NULL;
   Arena* arena = NULL;
+  size_t total_size = 0;
+  size_t arena_size = 0;
 #ifdef ARENA_DEBUG
   size_t cur_byte = 0;
 #endif
@@ -108,14 +109,17 @@ Arena* InitArena(size_t arena_size) {
     return NULL;
   }
 
-  slice = (char*)malloc(sizeof(Arena) + init_cap);
+  arena_size = (sizeof(Arena) + 7) & (size_t)~7;
+  total_size = arena_size + init_cap;
+
+  slice = (char*)malloc(total_size);
   if (slice == NULL) {
     return NULL;
   }
 
   arena = (Arena*)(void*)slice;
   
-  arena->data = slice + sizeof(Arena);
+  arena->data = slice + arena_size;
 
 #ifdef ARENA_DEBUG
   for(cur_byte = 0; cur_byte < init_cap; cur_byte++) {
@@ -140,10 +144,14 @@ void* ArenaAlloc(Arena* arena, size_t bytes) {
   size_t cur_byte = 0;
 #endif
   
-  if (BadArena(arena) || bytes == 0 || arena->offset == arena->capacity) {
+  if (BadArena(arena)) { 
     return NULL;
   }
 
+  if (bytes == 0 || arena->offset == arena->capacity) {
+    return NULL;
+  }
+  
   /* 8-byte alignment */
   total_size = ((bytes + 7) & (size_t)~7);
   if (arena->offset+total_size > arena->capacity) {
@@ -152,8 +160,8 @@ void* ArenaAlloc(Arena* arena, size_t bytes) {
 
 #ifdef ARENA_DEBUG
   /* Corruption check */
-  for(cur_byte = arena->offset; cur_byte < arena->capacity; cur_byte++) {
-    if (arena->data[cur_byte] != 0) {
+  for(cur_byte = 0; cur_byte < total_size; cur_byte++) {
+    if (arena->data[cur_byte+arena->offset] != 0) {
       arena->corruptions++;
       break;
     }
@@ -183,7 +191,8 @@ void ArenaReset(Arena* to_reset) {
 
 #ifdef ARENA_DEBUG
   if (to_reset->offset < to_reset->capacity) {
-    for(cur_byte = to_reset->offset; cur_byte < to_reset->capacity; cur_byte++) {
+    for(cur_byte = to_reset->offset;
+        cur_byte < to_reset->capacity; cur_byte++) {
       if (to_reset->data[cur_byte] != 0) {
         to_reset->corruptions++;
         break;
